@@ -1,0 +1,57 @@
+---
+# ---- Pool ZFS + dataset (assurer l'existence) ----
+- name: Vérifier que le pool ZFS {{ zfs_pool_data }} est présent
+  ansible.builtin.command: zpool import -a
+  changed_when: false
+  failed_when: false
+
+- name: Lister le pool ZFS
+  ansible.builtin.command: zpool list "{{ zfs_pool_data }}"
+  register: zpool_check
+  changed_when: false
+  failed_when: false
+
+- name: Créer le dataset des disques VM
+  ansible.builtin.command: zfs create -o mountpoint=/{{ zfs_pool_data }}/vm "{{ zfs_pool_vm_dataset }}"
+  when: zpool_check.rc == 0
+  failed_when: false
+
+# ---- Datastore PVE ------
+- name: Lister les datastores
+  ansible.builtin.command: pvesm status
+  register: pvesm_status
+  changed_when: false
+
+- name: Ajouter le datastore ZFS (si absent)
+  ansible.builtin.command:
+    argv:
+      - pvesm
+      - add
+      - zfspool
+      - "{{ zfs_pool_data }}"
+      - --pool
+      - "{{ zfs_pool_vm_dataset }}"
+      - --content
+      - images,rootdir
+  when: "'zfspool' not in pvesm_status.stdout or zfs_pool_data not in pvesm_status.stdout"
+
+# ---- Réplication asynchrone (pvesr) ----
+- name: Lister les jobs de réplication
+  ansible.builtin.command: pvesr list
+  register: pvesr_list
+  changed_when: false
+
+- name: Créer les jobs de réplication manquants
+  ansible.builtin.command:
+    argv:
+      - pvesr
+      - create-local-job
+      - "{{ item.key }}-0"
+      - "{{ item.value }}"
+      - --schedule
+      - "{{ replication_schedule }}"
+      - --rate
+      - "{{ replication_rate }}"
+  loop: "{{ replication_targets | dict2items }}"
+  when: "item.key not in pvesr_list.stdout"
+  changed_when: true

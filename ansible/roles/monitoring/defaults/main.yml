@@ -1,0 +1,6 @@
+---
+# account API de lecture (créé une fois, voir doc 10) : prometheus@pve
+pve_exporter_user: prometheus@pve
+pve_exporter_port: 9221
+node_exporter_port: 9100
+scrape_interval: 30s

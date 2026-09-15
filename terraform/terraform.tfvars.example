@@ -1,0 +1,5 @@
+# Copier ce fichier en `terraform.tfvars` et renseigner les valeurs réelles.
+# `terraform.tfvars` est ignoré par git (voir .gitignore) — jamais de secrets en clair dans le repo.
+
+proxmox_api_token = "terraform@pve!terraform-token=REMPLACER_PAR_LE_TOKEN"
+ssh_public_key    = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIXXXXXX admin@poste"

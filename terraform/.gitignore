@@ -1,0 +1,7 @@
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+!*.tfplan.example
+terraform.tfvars
+# .terraform.lock.hcl est VERSIONNÉ (reproductibilité des providers, doc 05 §6)

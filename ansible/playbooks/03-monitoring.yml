@@ -1,0 +1,6 @@
+# 03-monitoring.yml — Exporters sur les nœuds PVE + Prometheus/Grafana sur mon01 (doc 10)
+- name: Déployer la supervision
+  hosts: pve:vms
+  become: true
+  roles:
+    - role: monitoring

@@ -1,0 +1,14 @@
+---
+# Stacks docker à déployer (clé → { host, path, compose[".."] } ) — surchargeable par hôte
+compose_files_path: /opt/compose
+compose_stacks: {}
+
+# Exemple (activation par host_vars) :
+#   compose_stacks:
+#     monitoring:
+#       host: monitoring01
+#       content: |
+#         services:
+#           grafana:
+#             image: grafana/grafana:latest
+#             ports: ["3000:3000"]

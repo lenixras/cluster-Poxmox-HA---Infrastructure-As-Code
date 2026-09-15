@@ -1,0 +1,61 @@
+# Rôle `cluster` — assurer le cluster Corosync via l'API (doc 06 §4)
+- name: Récupérer l'état du cluster (pour idempotence)
+  community.proxmox.proxmox_cluster_status_info:
+    api_host: "{{ proxmox_api_host }}"
+    api_user: "{{ proxmox_api_user }}"
+    api_token_id: "{{ proxmox_api_token_id }}"
+    api_token_secret: "{{ vault_proxmox_api_token_secret }}"
+    validate_certs: "{{ proxmox_validate_certs }}"
+  register: cluster_status
+  failed_when: false
+
+- name: Créer le cluster sur pve1 (si absent)
+  community.proxmox.proxmox_cluster:
+    api_host: "{{ proxmox_api_host }}"
+    api_user: "{{ proxmox_api_user }}"
+    api_token_id: "{{ proxmox_api_token_id }}"
+    api_token_secret: "{{ vault_proxmox_api_token_secret }}"
+    validate_certs: "{{ proxmox_validate_certs }}"
+    state: present
+    cluster_name: "{{ pve_cluster_name }}"
+    link0: "{{ hostvars.pve1.pve_corosync_ip }}"
+    link1: "{{ hostvars.pve1.ansible_host }}"
+  tags: [never, cluster_create]
+  when: cluster_status.quorate is not defined or not cluster_status.quorate
+
+- name: Récupérer le fingerprint de pve1 (nécessaire à l'adhésion)
+  community.proxmox.proxmox_cluster_join_info:
+    api_host: "{{ proxmox_api_host }}"
+    api_user: "{{ proxmox_api_user }}"
+    api_token_id: "{{ proxmox_api_token_id }}"
+    api_token_secret: "{{ vault_proxmox_api_token_secret }}"
+    validate_certs: "{{ proxmox_validate_certs }}"
+  register: join_info
+
+- name: Joindre les nœuds restants au cluster
+  community.proxmox.proxmox_cluster:
+    api_host: "{{ hostvars[item].ansible_host }}"
+    api_user: "{{ proxmox_api_user }}"
+    api_token_id: "{{ proxmox_api_token_id }}"
+    api_token_secret: "{{ vault_proxmox_api_token_secret }}"
+    validate_certs: "{{ proxmox_validate_certs }}"
+    state: present
+    master_ip: "{{ proxmox_api_host }}"
+    # pvecm add copie des clés SSH : le mot de passe root du maître est requis (via Vault)
+    master_api_password: "{{ vault_pve_root_password }}"
+    link0: "{{ hostvars[item].pve_corosync_ip }}"
+    link1: "{{ hostvars[item].ansible_host }}"
+    fingerprint: "{{ join_info.fingerprint }}"
+  loop: "{{ groups['pve'][1:] }}"            # pve2, pve3
+  when: cluster_status.quorate is not defined or not cluster_status.quorate
+       or cluster_status.node_number is defined and cluster_status.node_number < 3
+
+- name: Confirmer l'état final (3 nœuds, quorum)
+  community.proxmox.proxmox_cluster_status_info:
+    api_host: "{{ proxmox_api_host }}"
+    api_user: "{{ proxmox_api_user }}"
+    api_token_id: "{{ proxmox_api_token_id }}"
+    api_token_secret: "{{ vault_proxmox_api_token_secret }}"
+    validate_certs: "{{ proxmox_validate_certs }}"
+  register: cluster_after
+  failed_when: cluster_after.quorate is not defined or not cluster_after.quorate

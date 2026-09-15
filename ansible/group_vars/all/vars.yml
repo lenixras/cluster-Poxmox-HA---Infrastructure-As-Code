@@ -1,0 +1,33 @@
+# Variables communes NON secrètes (doc 06 §2).
+# Les secrets vont dans group_vars/all/vault.yml (chiffré via ansible-vault).
+
+cluster_domain: cluster.local
+net_mgmt: 192.168.1.0/24
+net_corosync: 10.10.0.0/24
+net_vm: 10.10.10.0/24
+net_backup: 10.10.30.0/24
+vm_gateway: 10.10.10.1
+dns_servers: [10.10.10.20, 1.1.1.1]
+
+pve_cluster_name: ha-cluster
+pve_watchdog: softdog
+
+zfs_pool_data: tank
+zfs_pool_vm_dataset: tank/vm
+replication_schedule: "*/5"
+replication_rate: 10         # MB/s max par job pvesr
+
+proxmox_api_host: 192.168.1.10
+proxmox_api_port: 8006
+proxmox_api_user: ansible@pve
+proxmox_api_token_id: ansible@pve!ansible-token
+proxmox_validate_certs: false
+
+pbs_host: 10.10.30.10
+pbs_datastore: datastore1
+pbs_user: root@pam
+
+monitoring_host: 10.10.10.30
+pve_exporter_user: prometheus@pve
+pve_exporter_port: 9221
+node_exporter_port: 9100

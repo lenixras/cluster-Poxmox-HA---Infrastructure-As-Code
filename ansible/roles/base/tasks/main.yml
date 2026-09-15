@@ -1,0 +1,97 @@
+---
+- name: Configurer le fuseau horaire
+  community.general.timezone:
+    name: "{{ timezone }}"
+  when: timezone is defined
+
+- name: Installer chrony (NTP durci)
+  ansible.builtin.apt:
+    name: chrony
+    state: present
+
+- name: Configurer les serveurs NTP
+  ansible.builtin.template:
+    src: chrony.conf.j2
+    dest: /etc/chrony/chrony.conf
+    mode: "0644"
+    owner: root
+    group: root
+  notify: Redémarrer chrony
+
+- name: Activer chrony
+  ansible.builtin.service:
+    name: chrony
+    enabled: true
+    state: started
+
+# ---- SSH : clés uniquement (doc 09) ----
+- name: Désactiver l'authentification par mot de passe SSH
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "^PasswordAuthentication"
+    line: "PasswordAuthentication {{ 'no' if ssh_password_auth == false else 'yes' }}"
+  notify: Redémarrer sshd
+
+- name: Forcer root à clé uniquement
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "^PermitRootLogin"
+    line: "PermitRootLogin prohibit-password"
+  notify: Redémarrer sshd
+
+- name: Restreindre les comptes autorisés (si défini)
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "^AllowUsers"
+    line: "AllowUsers {{ sshd_allow_users | join(' ') }}"
+  when: sshd_allow_users | length > 0
+  notify: Redémarrer sshd
+
+# ---- Mises à jour automatiques (sans reboot) ----
+- name: Installer unattended-upgrades
+  ansible.builtin.apt:
+    name: unattended-upgrades
+    state: present
+
+- name: Activer les mises à jour automatiques
+  ansible.builtin.copy:
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Download-Upgradeable-Packages "1";
+      APT::Periodic::AutocleanInterval "7";
+      APT::Periodic::Unattended-Upgrade "1";
+    mode: "0644"
+
+# ---- fail2ban sur pveproxy (portail 8006) ----
+- name: Installer fail2ban
+  ansible.builtin.apt:
+    name: fail2ban
+    state: present
+  when: fail2ban_enabled
+
+- name: Filtrer les échecs d'authentification pveproxy
+  ansible.builtin.copy:
+    dest: /etc/fail2ban/filter.d/pveproxy.conf
+    content: |
+      [Definition]
+      failregex = pveproxy\[\d+\]: authentication failure; rhost=<HOST>
+    mode: "0644"
+  when: fail2ban_enabled
+  notify: Recharger fail2ban
+
+- name: Activer la prison pveproxy
+  ansible.builtin.copy:
+    dest: /etc/fail2ban/jail.d/pveproxy.local
+    content: |
+      [pveproxy]
+      enabled  = true
+      port     = 8006
+      filter   = pveproxy
+      logpath  = /var/log/pveproxy/access.log
+      backend  = auto
+      maxretry = 8
+      bantime  = 3600
+    mode: "0644"
+  when: fail2ban_enabled
+  notify: Recharger fail2ban

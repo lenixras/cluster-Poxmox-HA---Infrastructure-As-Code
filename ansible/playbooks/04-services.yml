@@ -1,0 +1,6 @@
+# 04-services.yml — Docker + stacks applicatives (compose) sur les VMs (doc 06 §1)
+- name: Déployer les services applicatifs
+  hosts: vms
+  become: true
+  roles:
+    - role: services

@@ -1,0 +1,39 @@
+---
+- name: Installer Docker
+  block:
+    - name: Installer docker.io et compose v2
+      ansible.builtin.apt:
+        name:
+          - docker.io
+          - docker-compose-v2
+        state: present
+
+    - name: Activer Docker
+      ansible.builtin.systemd:
+        name: docker
+        enabled: true
+        state: started
+
+- name: Déployer les stacks docker définies pour cet hôte
+  when: compose_stacks | length > 0
+  vars:
+    host_stacks: "{{ compose_stacks | dict2items | selectattr('value.host', 'equalto', inventory_hostname) | list }}"
+  block:
+    - name: Créer le répertoire de déploiement
+      ansible.builtin.file:
+        path: "{{ compose_files_path }}"
+        state: directory
+        mode: "0755"
+
+    - name: Écrire les fichiers compose
+      ansible.builtin.copy:
+        dest: "{{ compose_files_path }}/{{ item.key }}/docker-compose.yml"
+        content: "{{ item.value.content }}"
+        mode: "0644"
+      loop: "{{ host_stacks }}"
+
+    - name: Appliquer les stacks (docker compose up -d)
+      community.docker.docker_compose_v2:
+        project_src: "{{ compose_files_path }}/{{ item.key }}"
+        state: present
+      loop: "{{ host_stacks }}"

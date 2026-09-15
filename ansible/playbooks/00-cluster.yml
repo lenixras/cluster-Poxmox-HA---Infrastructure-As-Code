@@ -1,0 +1,10 @@
+# 00-cluster.yml — Assurer l'existence et la santé du cluster via l'API (doc 06 §4)
+# Exécution locale : les modules community.proxmox parlent à l'API (8006), pas besoin de SSH.
+- name: Assurer l'état du cluster Proxmox
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_files:
+    - ../group_vars/all/vault.yml
+  roles:
+    - role: cluster

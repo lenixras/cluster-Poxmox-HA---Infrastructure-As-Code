@@ -1,0 +1,7 @@
+default:
+  user: "{{ pve_exporter_user }}"
+  token_name: prometheus-token
+  token_value: "{{ vault_pve_exporter_token_secret }}"
+  verify_tls: false
+
+# Les nœuds sont scrapés individuellement via les cibles ci-dessous

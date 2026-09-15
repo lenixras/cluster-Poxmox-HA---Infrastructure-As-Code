@@ -1,0 +1,9 @@
+# Modèle des secrets attendus dans `group_vars/all/vault.yml`.
+# Créer le vrai fichier chiffré avec : ansible-vault create group_vars/all/vault.yml
+# Ne JAMAIS commiter le fichier chiffré ou ces valeurs en clair (voir .gitignore).
+
+vault_proxmox_api_token_secret: "REMPLACER"   # token du compte ansible@pve (doc 06 §3)
+vault_pve_root_password: "REMPLACER"          # mot de passe root@pam des nœuds (nécessaire à pvecm add)
+vault_pbs_password: "REMPLACER"               # mot de passe root@pam du PBS
+vault_grafana_password: "REMPLACER"           # admin Grafana (doc 10)
+vault_pve_exporter_token_secret: "REMPLACER"  # token du compte prometheus@pve (doc 10)

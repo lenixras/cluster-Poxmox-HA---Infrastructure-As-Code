@@ -1,0 +1,6 @@
+# 02-storage.yml — Pools ZFS, datastore et jobs de réplication pvesr (doc 04)
+- name: Configurer le stockage ZFS et la réplication
+  hosts: pve
+  become: true
+  roles:
+    - role: storage

@@ -1,0 +1,15 @@
+---
+- name: Redémarrer sshd
+  ansible.builtin.service:
+    name: ssh
+    state: restarted
+
+- name: Redémarrer chrony
+  ansible.builtin.service:
+    name: chrony
+    state: restarted
+
+- name: Recharger fail2ban
+  ansible.builtin.service:
+    name: fail2ban
+    state: restarted

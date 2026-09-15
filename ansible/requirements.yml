@@ -1,0 +1,5 @@
+collections:
+  - name: community.proxmox      # modules proxmox_kvm, proxmox_cluster, proxmox_cluster_ha_*
+    version: ">=1.1.0"
+  - name: community.general
+  - name: community.docker      # pour les services applicatifs

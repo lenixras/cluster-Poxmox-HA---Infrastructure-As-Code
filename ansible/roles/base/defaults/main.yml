@@ -1,0 +1,7 @@
+---
+ntp_servers: ["0.debian.pool.ntp.org", "1.debian.pool.ntp.org"]
+timezone: Europe/Paris
+ssh_password_auth: false
+fail2ban_enabled: true
+sshd_allow_users: []        # ex. ["root@192.168.1.*"]
+pve_firewall_policy_in: DROP

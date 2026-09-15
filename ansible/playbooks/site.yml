@@ -1,0 +1,22 @@
+# site.yml — Orchestration globale, utilisable avec --tags (doc 06 §6)
+# Exemple : ansible-playbook -i inventory.yml playbooks/site.yml --tags cluster,base,storage
+- name: État complet du cluster
+  hosts: all
+  gather_facts: false
+  tasks: []
+  tags: always
+
+- import_playbook: 00-cluster.yml
+  tags: cluster
+
+- import_playbook: 01-base.yml
+  tags: base
+
+- import_playbook: 02-storage.yml
+  tags: storage
+
+- import_playbook: 03-monitoring.yml
+  tags: monitoring
+
+- import_playbook: 04-services.yml
+  tags: services

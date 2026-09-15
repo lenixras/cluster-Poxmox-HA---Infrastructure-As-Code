@@ -1,0 +1,13 @@
+---
+zfs_pool_data: tank
+zfs_pool_vm_dataset: tank/vm
+replication_schedule: "*/5"
+replication_rate: 10
+# VMs critiques à répliquer : <vmid> → nœud cible secondaire
+replication_targets:
+  100: pve2
+  101: pve2
+  102: pve3
+  103: pve2
+  104: pve3
+  105: pve2

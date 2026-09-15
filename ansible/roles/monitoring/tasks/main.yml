@@ -1,0 +1,73 @@
+---
+# ---- Côté nœuds PVE : exporters ----
+- name: Déployer les exporters sur les nœuds PVE
+  when: inventory_hostname in groups['pve']
+  block:
+    - name: Installer node_exporter (Debian)
+      ansible.builtin.apt:
+        name: prometheus-node-exporter
+        state: present
+
+    - name: Installer prometheus-pve-exporter (pip)
+      ansible.builtin.pip:
+        name: prometheus-pve-exporter
+        state: present
+        executable: pip3
+
+    - name: Configurer le fichier cible de l'exporteur
+      ansible.builtin.template:
+        src: pve.yml.j2
+        dest: /etc/prometheus/pve.yml
+        mode: "0600"
+        owner: prometheus
+        group: prometheus
+
+    - name: Déployer le service systemd de l'exporteur
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/prometheus-pve-exporter.service
+        content: |
+          [Unit]
+          Description=Prometheus PVE exporter
+          After=network.target
+
+          [Service]
+          User=prometheus
+          Group=prometheus
+          ExecStart=/usr/local/bin/pve_exporter --config.file=/etc/prometheus/pve.yml
+          Restart=always
+
+          [Install]
+          WantedBy=multi-user.target
+        mode: "0644"
+
+    - name: Activer les services de supervision
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        enabled: true
+        state: started
+        daemon_reload: true
+      loop:
+        - prometheus-node-exporter
+        - prometheus-pve-exporter
+
+# ---- Côté mon01 : Prometheus ----
+- name: Installer Prometheus sur la VM de supervision
+  when: inventory_hostname == 'monitoring01'
+  block:
+    - name: Installer prometheus
+      ansible.builtin.apt:
+        name: prometheus
+        state: present
+
+    - name: Configurer les cibles de scrape
+      ansible.builtin.template:
+        src: prometheus.yml.j2
+        dest: /etc/prometheus/prometheus.yml
+        mode: "0644"
+        owner: prometheus
+        group: prometheus
+
+    - name: Redémarrer prometheus
+      ansible.builtin.systemd:
+        name: prometheus
+        state: restarted
